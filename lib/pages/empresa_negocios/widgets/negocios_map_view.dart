@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:nethive_neo/providers/nethive/empresas_negocios_provider.dart';
+import 'package:nethive_neo/providers/nethive/componentes_provider.dart';
 import 'package:nethive_neo/models/nethive/negocio_model.dart';
 import 'package:nethive_neo/theme/theme.dart';
 import 'package:nethive_neo/helpers/globals.dart';
@@ -253,6 +256,7 @@ class _NegociosMapViewState extends State<NegociosMapView>
                     urlTemplate:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.nethive.app',
+                    tileProvider: CancellableNetworkTileProvider(),
                   ),
 
                   // Capa de marcadores
@@ -318,9 +322,39 @@ class _NegociosMapViewState extends State<NegociosMapView>
             }
           },
           child: GestureDetector(
-            onTap: () {
-              // Navegar a la infraestructura del negocio
-              context.go('/infrastructure/${negocio.id}');
+            onTap: () async {
+              // Implementar la misma funcionalidad que el botón de la tabla
+              final negocioId = negocio.id;
+              final negocioNombre = negocio.nombre;
+              final empresaId = negocio.empresaId;
+
+              // Establecer el contexto del negocio en ComponentesProvider
+              final componentesProvider =
+                  Provider.of<ComponentesProvider>(context, listen: false);
+
+              try {
+                await componentesProvider.setNegocioSeleccionado(
+                  negocioId,
+                  negocioNombre,
+                  empresaId,
+                );
+
+                // Navegar al layout principal con el negocio seleccionado
+                if (context.mounted) {
+                  context.go('/infrastructure/$negocioId');
+                }
+              } catch (e) {
+                print('Error al configurar el negocio: $e');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('Error al acceder a la infraestructura: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: AnimatedBuilder(
               animation: _markerAnimation,

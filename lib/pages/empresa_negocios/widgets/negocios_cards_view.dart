@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:nethive_neo/providers/nethive/empresas_negocios_provider.dart';
+import 'package:nethive_neo/providers/nethive/componentes_provider.dart';
 import 'package:nethive_neo/theme/theme.dart';
 import 'package:nethive_neo/helpers/globals.dart';
 
@@ -192,6 +195,22 @@ class NegociosCardsView extends StatelessWidget {
                                       },
                                       itemBuilder: (context) => [
                                         PopupMenuItem(
+                                          value: 'infrastructure',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.account_tree,
+                                                  color: Colors.blue),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Acceder a Infraestructura',
+                                                style: TextStyle(
+                                                    color: AppTheme.of(context)
+                                                        .primaryText),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
                                           value: 'edit',
                                           child: Row(
                                             children: [
@@ -349,6 +368,47 @@ class NegociosCardsView extends StatelessWidget {
                                       ),
                                     ),
                                   ],
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                // Botón de acceso a infraestructura
+                                Container(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      _navigateToInfrastructure(
+                                          context, negocio);
+                                    },
+                                    icon: Icon(
+                                      Icons.account_tree,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      'Acceder a Infraestructura',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          AppTheme.of(context).primaryColor,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 3,
+                                      shadowColor: AppTheme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.3),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -580,6 +640,9 @@ class NegociosCardsView extends StatelessWidget {
 
   void _handleMenuAction(BuildContext context, String action, dynamic negocio) {
     switch (action) {
+      case 'infrastructure':
+        _navigateToInfrastructure(context, negocio);
+        break;
       case 'edit':
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Función de edición próximamente')),
@@ -593,6 +656,39 @@ class NegociosCardsView extends StatelessWidget {
       case 'delete':
         _showDeleteDialog(context, negocio);
         break;
+    }
+  }
+
+  void _navigateToInfrastructure(BuildContext context, dynamic negocio) async {
+    final negocioId = negocio.id;
+    final negocioNombre = negocio.nombre;
+    final empresaId = negocio.empresaId;
+
+    // Establecer el contexto del negocio en ComponentesProvider
+    final componentesProvider =
+        Provider.of<ComponentesProvider>(context, listen: false);
+
+    try {
+      await componentesProvider.setNegocioSeleccionado(
+        negocioId,
+        negocioNombre,
+        empresaId,
+      );
+
+      // Navegar al layout principal con el negocio seleccionado
+      if (context.mounted) {
+        context.go('/infrastructure/$negocioId');
+      }
+    } catch (e) {
+      print('Error al configurar el negocio: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al acceder a la infraestructura: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
